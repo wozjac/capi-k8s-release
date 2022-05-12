@@ -19,8 +19,8 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io/scrape: 'true'
-        prometheus.io/port: '9102'
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
       labels:
         app: cf-api-server
         app.kubernetes.io/name: cf-api-server
@@ -30,12 +30,12 @@ spec:
       containers:
         - name: cf-api-server
           image: #@ data.values.images.ccng
-          command: [ "/cnb/process/web" ]
+          command: ["/cnb/process/web"]
           env:
-          - name: CLOUD_CONTROLLER_NG_CONFIG
-            value: #@ ccng_config_mount_path
-          - name: CLOUD_CONTROLLER_NG_SECRETS
-            value: #@ ccng_secrets_mount_path
+            - name: CLOUD_CONTROLLER_NG_CONFIG
+              value: #@ ccng_config_mount_path
+            - name: CLOUD_CONTROLLER_NG_SECRETS
+              value: #@ ccng_secrets_mount_path
           imagePullPolicy: Always
           resources:
             requests:
@@ -55,26 +55,26 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
           volumeMounts:
-          - #@ template.replace(shared_config_volume_mounts())
-          - name: server-sock
-            mountPath: /data/cloud_controller_ng
-          - name: nginx-uploads
-            mountPath: /tmp/uploads
-          #@ if/end data.values.eirini.serverCerts.secretName:
-          - name: eirini-certs
-            mountPath: /config/eirini/certs
-          #@ if/end data.values.ccdb.ca_cert:
-          - name: database-ca-cert
-            mountPath: /config/database/certs
+            -  #@ template.replace(shared_config_volume_mounts())
+            - name: server-sock
+              mountPath: /data/cloud_controller_ng
+            - name: nginx-uploads
+              mountPath: /tmp/uploads
+            #@ if/end data.values.eirini.serverCerts.secretName:
+            - name: eirini-certs
+              mountPath: /config/eirini/certs
+            #@ if/end data.values.ccdb.ca_cert:
+            - name: database-ca-cert
+              mountPath: /config/database/certs
         - name: cf-api-local-worker
           image: #@ data.values.images.ccng
           imagePullPolicy: Always
-          command: [ "/cnb/process/local-worker" ]
+          command: ["/cnb/process/local-worker"]
           env:
-          - name: CLOUD_CONTROLLER_NG_CONFIG
-            value: #@ ccng_config_mount_path
-          - name: CLOUD_CONTROLLER_NG_SECRETS
-            value: #@ ccng_secrets_mount_path
+            - name: CLOUD_CONTROLLER_NG_CONFIG
+              value: #@ ccng_config_mount_path
+            - name: CLOUD_CONTROLLER_NG_SECRETS
+              value: #@ ccng_secrets_mount_path
           resources:
             requests:
               cpu: 100m
@@ -83,14 +83,14 @@ spec:
               cpu: 500m
               memory: 1Gi
           volumeMounts:
-          - #@ template.replace(shared_config_volume_mounts())
-          - name: nginx-uploads
-            mountPath: /tmp/uploads
-          - name: tmp-packages
-            mountPath: /tmp/packages
-          #@ if/end data.values.ccdb.ca_cert:
-          - name: database-ca-cert
-            mountPath: /config/database/certs
+            -  #@ template.replace(shared_config_volume_mounts())
+            - name: nginx-uploads
+              mountPath: /tmp/uploads
+            - name: tmp-packages
+              mountPath: /tmp/packages
+            #@ if/end data.values.ccdb.ca_cert:
+            - name: database-ca-cert
+              mountPath: /config/database/certs
         - name: registry-buddy
           image: #@ data.values.images.registry_buddy
           imagePullPolicy: Always
@@ -104,36 +104,37 @@ spec:
           livenessProbe:
             exec:
               command:
-              #! We cannot use a http liveness probe for security concerns. See this ADR for more information:
-              #! https://github.com/cloudfoundry/capi-k8s-release/blob/main/decisions/0005-exec-curl-instead-of-http-liveness-probe-registry-buddy.md
-              - curl
-              - --silent
-              - --fail
-              - --show-error
-              - localhost:8080/healthz
+                #! We cannot use a http liveness probe for security concerns. See this ADR for more information:
+                #! https://github.com/cloudfoundry/capi-k8s-release/blob/main/decisions/0005-exec-curl-instead-of-http-liveness-probe-registry-buddy.md
+                - curl
+                - --silent
+                - --fail
+                - --show-error
+                - localhost:8080/healthz
             initialDelaySeconds: 5
+            timeoutSeconds: 4
           volumeMounts:
-          - name: tmp-packages
-            mountPath: /tmp/packages
+            - name: tmp-packages
+              mountPath: /tmp/packages
           env:
-          - name: REGISTRY_BASE_PATH
-            value: #@ data.values.kpack.registry.repository_prefix
-          - name: REGISTRY_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: cc-package-registry-upload-secret
-                key: username
-          - name: REGISTRY_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: cc-package-registry-upload-secret
-                key: password
+            - name: REGISTRY_BASE_PATH
+              value: #@ data.values.kpack.registry.repository_prefix
+            - name: REGISTRY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: cc-package-registry-upload-secret
+                  key: username
+            - name: REGISTRY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cc-package-registry-upload-secret
+                  key: password
         - name: nginx
           image: #@ data.values.images.nginx
           imagePullPolicy: Always
           ports:
-          - containerPort: 80
-          - containerPort: 9023
+            - containerPort: 80
+            - containerPort: 9023
           livenessProbe:
             tcpSocket:
               port: 80
@@ -147,18 +148,18 @@ spec:
               cpu: 1000m
               memory: 1Gi
           volumeMounts:
-          - name: nginx
-            mountPath: /etc/nginx
-            readOnly: true
-          - name: server-sock
-            mountPath: /data/cloud_controller_ng
-          - name: nginx-logs
-            mountPath: /cloud_controller_ng
-          - name: nginx-uploads
-            mountPath: /tmp/uploads
+            - name: nginx
+              mountPath: /etc/nginx
+              readOnly: true
+            - name: server-sock
+              mountPath: /data/cloud_controller_ng
+            - name: nginx-logs
+              mountPath: /cloud_controller_ng
+            - name: nginx-uploads
+              mountPath: /tmp/uploads
         - name: statsd-exporter
           ports:
-          - containerPort: 9102
+            - containerPort: 9102
           image: #@ data.values.images.statsd_exporter
           imagePullPolicy: Always
           resources:
@@ -170,24 +171,23 @@ spec:
               memory: 1Gi
       serviceAccountName: cf-api-server-service-account
       volumes:
-      - #@ template.replace(shared_config_volumes())
-      - name: server-sock
-        emptyDir: {}
-      - name: nginx
-        configMap:
-          name: nginx
-      - name: nginx-logs
-        emptyDir: {}
-      #@ if/end data.values.eirini.serverCerts.secretName:
-      - name: eirini-certs
-        secret:
-          secretName: #@ data.values.eirini.serverCerts.secretName
-      #@ if/end data.values.ccdb.ca_cert:
-      - name: database-ca-cert
-        secret:
-          secretName: database-ca-cert
-      - name: nginx-uploads
-        emptyDir: {}
-      - name: tmp-packages
-        emptyDir: {}
-
+        -  #@ template.replace(shared_config_volumes())
+        - name: server-sock
+          emptyDir: {}
+        - name: nginx
+          configMap:
+            name: nginx
+        - name: nginx-logs
+          emptyDir: {}
+        #@ if/end data.values.eirini.serverCerts.secretName:
+        - name: eirini-certs
+          secret:
+            secretName: #@ data.values.eirini.serverCerts.secretName
+        #@ if/end data.values.ccdb.ca_cert:
+        - name: database-ca-cert
+          secret:
+            secretName: database-ca-cert
+        - name: nginx-uploads
+          emptyDir: {}
+        - name: tmp-packages
+          emptyDir: {}

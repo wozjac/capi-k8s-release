@@ -24,16 +24,16 @@ spec:
         - name: cf-api-worker
           image: #@ data.values.images.ccng
           imagePullPolicy: Always
-          command: [ "/cnb/process/api-worker" ]
+          command: ["/cnb/process/api-worker"]
           ports:
-          - containerPort: 4444
+            - containerPort: 4444
           env:
-          - name: CLOUD_CONTROLLER_NG_CONFIG
-            value: #@ ccng_config_mount_path
-          - name: CLOUD_CONTROLLER_NG_SECRETS
-            value: #@ ccng_secrets_mount_path
-          - name: INDEX
-            value: "1"
+            - name: CLOUD_CONTROLLER_NG_CONFIG
+              value: #@ ccng_config_mount_path
+            - name: CLOUD_CONTROLLER_NG_SECRETS
+              value: #@ ccng_secrets_mount_path
+            - name: INDEX
+              value: "1"
           resources:
             requests:
               cpu: 300m
@@ -46,13 +46,13 @@ spec:
               port: 4444
             periodSeconds: 3
           volumeMounts:
-          - #@ template.replace(shared_config_volume_mounts())
-          #@ if/end data.values.eirini.serverCerts.secretName:
-          - name: eirini-certs
-            mountPath: /config/eirini/certs
-          #@ if/end data.values.ccdb.ca_cert:
-          - name: database-ca-cert
-            mountPath: /config/database/certs
+            -  #@ template.replace(shared_config_volume_mounts())
+            #@ if/end data.values.eirini.serverCerts.secretName:
+            - name: eirini-certs
+              mountPath: /config/eirini/certs
+            #@ if/end data.values.ccdb.ca_cert:
+            - name: database-ca-cert
+              mountPath: /config/database/certs
         - name: registry-buddy
           image: #@ data.values.images.registry_buddy
           imagePullPolicy: Always
@@ -72,14 +72,15 @@ spec:
           livenessProbe:
             exec:
               command:
-              #! We cannot use a http liveness probe for security concerns. See this ADR for more information:
-              #! https://github.com/cloudfoundry/capi-k8s-release/blob/main/decisions/0005-exec-curl-instead-of-http-liveness-probe-registry-buddy.md
-              - curl
-              - --silent
-              - --fail
-              - --show-error
-              - localhost:8080/healthz
+                #! We cannot use a http liveness probe for security concerns. See this ADR for more information:
+                #! https://github.com/cloudfoundry/capi-k8s-release/blob/main/decisions/0005-exec-curl-instead-of-http-liveness-probe-registry-buddy.md
+                - curl
+                - --silent
+                - --fail
+                - --show-error
+                - localhost:8080/healthz
             initialDelaySeconds: 5
+            timeoutSeconds: 4
           resources:
             requests:
               cpu: 500m
@@ -89,13 +90,12 @@ spec:
               memory: 150Mi
       serviceAccountName: cf-api-worker-service-account
       volumes:
-      - #@ template.replace(shared_config_volumes())
-      #@ if/end data.values.eirini.serverCerts.secretName:
-      - name: eirini-certs
-        secret:
-          secretName: #@ data.values.eirini.serverCerts.secretName
-      #@ if/end data.values.ccdb.ca_cert:
-      - name: database-ca-cert
-        secret:
-          secretName: database-ca-cert
-
+        -  #@ template.replace(shared_config_volumes())
+        #@ if/end data.values.eirini.serverCerts.secretName:
+        - name: eirini-certs
+          secret:
+            secretName: #@ data.values.eirini.serverCerts.secretName
+        #@ if/end data.values.ccdb.ca_cert:
+        - name: database-ca-cert
+          secret:
+            secretName: database-ca-cert
